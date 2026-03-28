@@ -8,13 +8,27 @@ echo "════════════════════════�
 echo "  GNS Tesla Monitor - Mac Mini Kurulum"
 echo "════════════════════════════════════════════"
 
-# 1. Node.js kontrol
+# 1. Node.js kontrol ve kurulum
 if ! command -v node &> /dev/null; then
   echo "📦 Node.js kuruluyor..."
-  curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | bash
-  brew install node
+  # Mac'in mimarisini belirle (Apple Silicon vs Intel)
+  ARCH=$(uname -m)
+  if [ "$ARCH" = "arm64" ]; then
+    NODE_URL="https://nodejs.org/dist/v22.14.0/node-v22.14.0-darwin-arm64.tar.gz"
+  else
+    NODE_URL="https://nodejs.org/dist/v22.14.0/node-v22.14.0-darwin-x64.tar.gz"
+  fi
+  curl -fsSL "$NODE_URL" -o /tmp/node.tar.gz
+  mkdir -p ~/.local/nodejs
+  tar -xzf /tmp/node.tar.gz -C ~/.local/nodejs
+  NODE_DIR=$(ls ~/.local/nodejs | head -1)
+  echo "export PATH=\$HOME/.local/nodejs/$NODE_DIR/bin:\$PATH" >> ~/.zshrc
+  export PATH="$HOME/.local/nodejs/$NODE_DIR/bin:$PATH"
+  rm /tmp/node.tar.gz
+  echo "✅ Node.js kuruldu: $(node --version)"
+else
+  echo "✅ Node.js zaten kurulu: $(node --version)"
 fi
-echo "✅ Node.js: $(node --version)"
 
 # 2. Proje dizini oluştur
 mkdir -p ~/gns-tesla-monitor
@@ -319,7 +333,7 @@ cat > "$PLIST_PATH" << PLIST
     <string>com.gns.tesla-monitor</string>
     <key>ProgramArguments</key>
     <array>
-        <string>$(which node)</string>
+        <string>$(command -v node)</string>
         <string>$HOME/gns-tesla-monitor/monitor.js</string>
     </array>
     <key>WorkingDirectory</key>
@@ -335,13 +349,17 @@ cat > "$PLIST_PATH" << PLIST
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+        <string>NODE_PATH_PLACEHOLDER:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
     </dict>
 </dict>
 </plist>
 PLIST
 
-# 9. LaunchAgent başlat
+# 9. Plist'teki path'leri düzelt
+NODE_BIN_DIR=$(dirname "$(command -v node)")
+sed -i '' "s|NODE_PATH_PLACEHOLDER|$NODE_BIN_DIR|g" "$PLIST_PATH"
+
+# 10. LaunchAgent başlat
 launchctl unload "$PLIST_PATH" 2>/dev/null || true
 launchctl load "$PLIST_PATH"
 
