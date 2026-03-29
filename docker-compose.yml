@@ -1,0 +1,19 @@
+services:
+  tesla-monitor:
+    build: .
+    container_name: gns-tesla-monitor
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - STATE_DIR=/app/data
+    volumes:
+      - tesla-state:/app/data
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  tesla-state:

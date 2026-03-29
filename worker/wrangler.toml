@@ -1,0 +1,15 @@
+name = "gns-tesla-monitor"
+main = "src/worker.js"
+compatibility_date = "2024-12-01"
+workers_dev = true
+
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+TELEGRAM_BOT_TOKEN = "8743865715:AAFy2V37mhmN4xZCJVUtwJtVH6VRgMvEFTQ"
+TELEGRAM_CHAT_IDS = "7733290289,8793825386"
+
+[[kv_namespaces]]
+binding = "STATE"
+id = "427dbe61987b4c008991c08f5bfe0337"
